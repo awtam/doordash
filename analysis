@@ -1,0 +1,61 @@
+--Creation of initial table within the doordash database
+CREATE TABLE delivery
+(custorder_date INT, custorder_time TIME,  restreceived_date INT,  restereceived_time TIME, 
+ driveratrest_date INT, driveratrest_time TIME, delivered_date INT, delivered_time TIME, driverid INT, restid INT, consumerid INT, 
+ region VARCHAR(50), asap BOOLEAN, order_total NUMERIC, discount NUMERIC, tip NUMERIC, refund NUMERIC)
+
+--Imported data using pgAdmin
+
+--Analysis of percentage of orders per region
+SELECT region, count(*) AS number_per_region, ROUND(COUNT(*)*100.0/SUM(COUNT(*)) OVER(),2) AS percent_per_region
+FROM delivery
+GROUP BY region
+ORDER BYy percent_per_region DESC
+
+--Analysis of tips per region by ASAP order
+SELECT region, asap, COUNT(*),
+ROUND(COUNT(*)*100.0/SUM(COUNT(*)) OVER(PARTITION BY region),2) AS percentperregion,
+ROUND(AVG(tip),2) AS avgtips
+FROM delivery
+GROUP BY region, asap
+ORDER BY region DESC, asap DESC
+
+--Analysis of the top 10 restaurants with refund orders
+SELECT DISTINCT restid, COUNT(restid), 
+ROUND(avg(tip),2) AS avgtip,
+ROUND(avg(order_total),2) AS avgtotal, 
+ROUND(avg(refund),2) AS avgrefund
+FROM delivery
+WHERE refund > 0
+GROUP BY restid
+ORDER BY COUNT(restid) DESC, avgrefund
+LIMIT 10
+
+--Analysis of top 10 drivers with refund orders
+SELECT DISTINCT driverid, COUNT(driverid), 
+ROUND(avg(tip),2) AS avgtip,
+ROUND(avg(order_total),2) AS avgtotal, 
+ROUND(avg(refund),2) AS avgrefund
+FROM delivery
+WHERE refund > 0
+GROUP BY driverid
+ORDER BY COUNT(driverid) DESC, avgrefund
+LIMIT 10
+
+--Analysis to see min and max of orders per region
+SELECT region, MAX(order_total), MIN(order_total),ROUND(AVG(order_total),2)
+FROM delivery
+GROUP BY region
+
+--Analysis for top 10 restaurants overall
+SELECT region, restid, COUNT(order_total) AS timesordered, ROUND(AVG(order_total),2) AS averagetotal,
+ROUND(SUM(order_total),2) AS sumordertotal
+FROM delivery
+GROUP BY region, restid
+ORDER BY count(order_total) DESC, sumordertotal DESC
+LIMIT 10
+
+--Analysis for average tips per region
+SELECT region, ROUND(AVG(tip),2), MAX(tip)
+FROM delivery
+GROUP BY region
